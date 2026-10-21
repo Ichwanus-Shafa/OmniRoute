@@ -1,1 +1,0 @@
-- **feat(dashboard):** Add opt-in `DASHBOARD_ALLOW_EMBED=arena` support for Arena previews and sandbox development origins while retaining strict API framing protections and unchanged defaults ([#1](https://github.com/Ichwanus-Shafa/OmniRoute/pull/1)) — thanks @Ichwanus-Shafa
