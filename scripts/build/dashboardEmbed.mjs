@@ -8,6 +8,7 @@
  *
  * Setting `DASHBOARD_ALLOW_EMBED=vscode` at build time swaps the page surface to
  * `frame-ancestors 'self' vscode-webview:` and drops `X-Frame-Options` for those pages.
+ * `DASHBOARD_ALLOW_EMBED=arena` allows Arena's browser panel and sandbox dev origins instead.
  * XFO has no syntax for a custom scheme, and keeping `DENY` alongside a permissive
  * `frame-ancestors` would still block the frame in engines that honour XFO first — dropping
  * it is required, not cosmetic. (Modern engines ignore XFO entirely once `frame-ancestors`
@@ -29,6 +30,8 @@ export const EMBED_FRAME_ANCESTORS = Object.freeze({
   // `vscode-webview:` is the scheme VS Code assigns to webview/Simple Browser documents.
   // `'self'` keeps OmniRoute's own same-origin frames (e.g. the G-10 9Router embed) working.
   vscode: "'self' vscode-webview:",
+  // Arena's live preview embeds the dashboard in its browser panel.
+  arena: "'self' https://arena.ai https://*.arena.ai",
 });
 
 /** The strict `frame-ancestors` token the CSP carries by default. */
@@ -47,7 +50,7 @@ export const STATIC_NON_PAGE_PREFIXES = Object.freeze(["api", "a2a", "healthz"])
  * the operator must name the ancestor family they are opening up.
  *
  * @param {Record<string, string | undefined>} env
- * @returns {"vscode" | null}
+ * @returns {"vscode" | "arena" | null}
  */
 export function resolveDashboardEmbedMode(env = process.env) {
   const raw = env?.[DASHBOARD_EMBED_ENV];
@@ -99,7 +102,7 @@ export function complementarySources(prefixes) {
  * byte-identical.
  *
  * @param {string} contentSecurityPolicy
- * @param {"vscode"} mode
+ * @param {"vscode" | "arena"} mode
  */
 export function relaxFrameAncestors(contentSecurityPolicy, mode) {
   return contentSecurityPolicy.replace(
@@ -116,7 +119,7 @@ export function relaxFrameAncestors(contentSecurityPolicy, mode) {
  * surface keeps the strict headers, the page surface gets the relaxed CSP and no XFO.
  *
  * @param {{
- *   mode: "vscode" | null,
+ *   mode: "vscode" | "arena" | null,
  *   securityHeaders: { key: string, value: string }[],
  *   prefixes?: string[],
  * }} options
@@ -127,7 +130,7 @@ export function buildSecurityHeaderRules({ mode, securityHeaders, prefixes = [] 
 
   const { nonPageSource, pageSource } = complementarySources(prefixes);
   const pageHeaders = securityHeaders
-    // X-Frame-Options cannot express `vscode-webview:` and would veto the relaxed CSP.
+    // X-Frame-Options cannot express the allowed ancestors and would veto the relaxed CSP.
     .filter((header) => header.key !== "X-Frame-Options")
     .map((header) =>
       header.key === "Content-Security-Policy"

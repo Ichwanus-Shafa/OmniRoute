@@ -111,7 +111,7 @@ function filterKnownInfrastructureWarnings(baseConsole) {
 // for security-sensitive environments. See docs/security/SOCKET_DEV_FINDINGS.md.
 const isMinimalBuild = process.env.OMNIROUTE_BUILD_PROFILE === "minimal";
 
-// #10273: `null` unless the operator opts in with DASHBOARD_ALLOW_EMBED=vscode. Read at build
+// #10273: `null` unless the operator opts in with DASHBOARD_ALLOW_EMBED=vscode or arena. Read at build
 // time like every other knob in this file (OMNIROUTE_BASE_PATH, OMNIROUTE_BUILD_PROFILE, …),
 // so changing it requires a rebuild. See scripts/build/dashboardEmbed.mjs.
 const dashboardEmbedMode = resolveDashboardEmbedMode(process.env);
@@ -388,7 +388,12 @@ const nextConfig = {
     "process",
   ],
   transpilePackages: ["@omniroute/open-sse", "@lobehub/icons", "fumadocs-ui", "fumadocs-core"],
-  allowedDevOrigins: ["localhost", "127.0.0.1", "192.168.0.250"],
+  allowedDevOrigins: [
+    "localhost",
+    "127.0.0.1",
+    "192.168.0.250",
+    ...(dashboardEmbedMode === "arena" ? ["*.e2b.app"] : []),
+  ],
   typescript: {
     // TODO: Re-enable after fixing all sub-component useTranslations scope issues
     ignoreBuildErrors: true,
@@ -479,7 +484,10 @@ const nextConfig = {
       // does the importing.
       const replacements = [
         [/^@\/mitm\/cert\/install$/, join(projectRoot, "src/mitm/cert/install.stub.ts")],
-        [/^@\/lib\/zed-oauth\/keychain-reader$/, join(projectRoot, "src/lib/zed-oauth/keychain-reader.stub.ts")],
+        [
+          /^@\/lib\/zed-oauth\/keychain-reader$/,
+          join(projectRoot, "src/lib/zed-oauth/keychain-reader.stub.ts"),
+        ],
         [/^@\/lib\/cloudSync$/, join(projectRoot, "src/lib/cloudSync.stub.ts")],
         [
           /^@\/lib\/services\/installers\/ninerouter$/,
@@ -502,11 +510,11 @@ const nextConfig = {
   },
 
   async headers() {
-    // #10273: opt-in embedding for the VS Code Simple Browser (OmniCopilot). Off by default —
+    // #10273: opt-in embedding for the VS Code Simple Browser or Arena. Off by default —
     // `securityHeaders` then applies to `/:path*` exactly as it always has. When the operator
-    // sets DASHBOARD_ALLOW_EMBED=vscode, buildSecurityHeaderRules() splits that catch-all into
+    // sets a supported DASHBOARD_ALLOW_EMBED mode, buildSecurityHeaderRules() splits it into
     // two complementary rules: the API surface keeps `frame-ancestors 'none'` + X-Frame-Options,
-    // the HTML pages get `frame-ancestors 'self' vscode-webview:` and no X-Frame-Options.
+    // the HTML pages allow only the selected ancestor family and drop X-Frame-Options.
     // The exclusion list is DERIVED from the rewrite table below (self-reference is safe — the
     // config object is fully built by the time Next calls headers()), so a future root-level API
     // alias is excluded automatically instead of silently becoming framable.
