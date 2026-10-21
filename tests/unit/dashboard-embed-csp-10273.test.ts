@@ -123,6 +123,48 @@ test("#10273 DASHBOARD_ALLOW_EMBED=vscode enables the vscode mode, case/space to
   assert.equal(EMBED_FRAME_ANCESTORS.vscode, "'self' vscode-webview:");
 });
 
+test("Arena embed mode is explicit and case/space tolerant", () => {
+  for (const raw of ["arena", "Arena", "  ARENA  "]) {
+    assert.equal(resolveDashboardEmbedMode({ [DASHBOARD_EMBED_ENV]: raw }), "arena");
+  }
+  assert.equal(EMBED_FRAME_ANCESTORS.arena, "'self' https://arena.ai https://*.arena.ai");
+});
+
+test("Arena embedding relaxes only page framing and keeps APIs protected", async () => {
+  process.env[DASHBOARD_EMBED_ENV] = "arena";
+  const rules = await loadHeaders("arena-pages-and-api");
+
+  delete process.env[DASHBOARD_EMBED_ENV];
+  const strictRules = await loadHeaders("arena-strict-baseline");
+
+  for (const pathname of PAGE_PATHS) {
+    const headers = effectiveHeaders(rules, pathname);
+    const strict = effectiveHeaders(strictRules, pathname);
+    assert.equal(
+      headers["Content-Security-Policy"],
+      strict["Content-Security-Policy"].replace(
+        "frame-ancestors 'none'",
+        "frame-ancestors 'self' https://arena.ai https://*.arena.ai"
+      ),
+      `${pathname} must allow only the Arena ancestor family without changing other directives`
+    );
+    assert.equal(headers["X-Frame-Options"], undefined);
+    for (const [key, value] of Object.entries(strict)) {
+      if (key !== "Content-Security-Policy" && key !== "X-Frame-Options") {
+        assert.equal(headers[key], value, `${pathname} must preserve ${key}`);
+      }
+    }
+  }
+
+  for (const pathname of API_PATHS) {
+    assert.deepEqual(
+      effectiveHeaders(rules, pathname),
+      effectiveHeaders(strictRules, pathname),
+      `${pathname} must retain all default security headers`
+    );
+  }
+});
+
 // ── default posture must not move ──────────────────────────────────────────
 
 test("#10273 default build keeps frame-ancestors 'none' + X-Frame-Options: DENY everywhere", async () => {
@@ -267,7 +309,7 @@ test("#10273 every root-level rewrite alias is excluded from the embeddable page
   }
 });
 
-test("#10273 Next.js accepts the generated header sources in BOTH modes (startup guard)", async () => {
+test("#10273 Next.js accepts the generated header sources in every mode (startup guard)", async () => {
   // `loadCustomRoutes` is the validation Next runs when the config loads: a `source` it
   // rejects aborts the build. The embed-mode sources are regexes, and CI never builds with
   // DASHBOARD_ALLOW_EMBED set — without this guard a malformed source would only blow up on
@@ -275,7 +317,7 @@ test("#10273 Next.js accepts the generated header sources in BOTH modes (startup
   const require = createRequire(import.meta.url);
   const loadCustomRoutes = require("next/dist/lib/load-custom-routes.js").default;
 
-  for (const mode of [undefined, "vscode"]) {
+  for (const mode of [undefined, "vscode", "arena"]) {
     if (mode) process.env[DASHBOARD_EMBED_ENV] = mode;
     else delete process.env[DASHBOARD_EMBED_ENV];
 
