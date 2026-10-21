@@ -4,19 +4,19 @@
 
 ---
 
-Webbcookieleverantörer gör det möjligt för OmniRoute att använda en AI-tjänst via din befintliga webbläsarsession i stället för en API-nyckel. De är användbara när du redan har åtkomst till en tjänst via dess webbplats och vill att OmniRoute ska använda samma autentiserade session.
+Web Cookie-leverantörer låter OmniRoute använda en AI-tjänst via din befintliga webbläsarsession i stället för en API-nyckel. De är användbara när du redan har åtkomst till en tjänst via dess webbplats och vill att OmniRoute ska använda samma autentiserade session.
 
-Till skillnad från leverantörer med API-nyckel autentiserar webbcookieleverantörer med hjälp av de autentiseringsuppgifter som din webbläsare skickar till webbplatsen.
+Till skillnad från leverantörer som använder API-nycklar autentiserar Web Cookie-leverantörer med hjälp av de autentiseringsuppgifter som din webbläsare skickar till webbplatsen.
 
 ---
 
 # Innan du börjar
 
-> **Viktigt:** Kopiera alltid autentiseringsuppgifter från en **aktiv nätverksbegäran**, **inte** från webbläsarens cookielagring.
+> **Viktigt:** Kopiera alltid autentiseringsuppgifter från en **aktiv nätverksbegäran**, **inte** från webbläsarens cookie-lagring.
 
-Många autentiseringsproblem orsakas av att cookies kopieras från fel plats.
+Många autentiseringsproblem orsakas av att cookies kopieras från fel ställe.
 
-## Kopiera INTE från cookielagringen
+## Kopiera INTE från cookie-lagringen
 
 De flesta webbläsare visar lagrade cookies via:
 
@@ -47,15 +47,15 @@ DevTools
 → Cookie
 ```
 
-Begärandehuvudet `Cookie` innehåller exakt den autentiseringsinformation som webbläsaren använde.
+Begärandehuvudet `Cookie` innehåller exakt den autentiseringsinformation som din webbläsare använde.
 
-För de flesta webbcookieleverantörer är detta värdet som ska klistras in i OmniRoute.
+För de flesta Web Cookie-leverantörer är detta värdet som ska klistras in i OmniRoute.
 
 ---
 
 # Allmän konfiguration
 
-Konfigurationsprocessen är densamma för de flesta webbcookieleverantörer.
+Konfigurationsprocessen är densamma för de flesta Web Cookie-leverantörer.
 
 1. Logga in på leverantörens webbplats.
 2. Öppna webbläsarens utvecklarverktyg.
@@ -65,7 +65,7 @@ Konfigurationsprocessen är densamma för de flesta webbcookieleverantörer.
 6. Kopiera de autentiseringsuppgifter som krävs.
 7. Öppna OmniRoute.
 8. Gå till **Providers → Add Provider**.
-9. Välj din webbcookieleverantör.
+9. Välj din Web Cookie-leverantör.
 10. Klistra in autentiseringsuppgifterna.
 11. Klicka på **Test Connection**.
 12. Spara leverantören.
@@ -74,27 +74,77 @@ Vilka autentiseringsuppgifter som krävs beror på leverantören.
 
 ---
 
-# Format för leverantörers autentiseringsuppgifter
+# Format för leverantörsuppgifter
 
-Olika webbplatser lagrar autentiseringsinformation på olika sätt. Vissa kräver endast cookies, medan andra kan kräva ytterligare huvuden eller tokens.
+Olika webbplatser lagrar autentisering på olika sätt. Vissa kräver endast cookies, medan andra kan kräva ytterligare huvuden eller tokens.
 
-| Leverantör                      | Format för autentiseringsuppgifter   | Leverantörsguide                 |
-| ------------------------------- | ------------------------------------ | -------------------------------- |
-| Claude Web                      | Fullständigt `Cookie`-begärandehuvud | `docs/providers/CLAUDE_WEB.md`   |
-| ChatGPT Web (Codex)             | Fullständigt `Cookie`-huvud          | `docs/providers/CHATGPT_WEB.md`  |
-| Gemini Web                      | _(verifiera)_                        |                                  |
-| Copilot Web                     | _(verifiera)_                        | `docs/providers/COPILOT-M365.md` |
-| Microsoft 365 Copilot (BizChat) | WS access_token + chathubPath        | `docs/providers/COPILOT-M365.md` |
-| Grok Web                        | _(verifiera)_                        |                                  |
-| ...                             | ...                                  | ...                              |
+| Leverantör                      | Format för autentiseringsuppgifter | Leverantörsguide                 |
+| ------------------------------- | ---------------------------------- | -------------------------------- |
+| Claude Web                      | Fullständigt Cookie-begärandehuvud | `docs/providers/CLAUDE_WEB.md`   |
+| ChatGPT Web (Codex)             | Fullständigt Cookie-huvud          | `docs/providers/CHATGPT_WEB.md`  |
+| Gemini Web                      | _(verifiera)_                      |                                  |
+| Copilot Web                     | _(verifiera)_                      | `docs/providers/COPILOT-M365.md` |
+| Microsoft 365 Copilot (BizChat) | WS access_token + chathubPath      | `docs/providers/COPILOT-M365.md` |
+| Grok Web                        | _(verifiera)_                      |                                  |
+| ...                             | ...                                | ...                              |
 
-> Uppdatera den här tabellen när nya webbcookieleverantörer läggs till eller när befintliga leverantörer ändrar sina autentiseringskrav.
+> Uppdatera den här tabellen när nya Web Cookie-leverantörer läggs till eller när befintliga leverantörer ändrar sina autentiseringskrav.
+
+## NoTrack (notrack-web)
+
+NoTrack ([notrack.ai](https://notrack.ai)) är en kostnadsfri chattplattform för konsumenter som inte kräver registrering — sessionen skapas anonymt vid det första besöket och bevaras via tre cookies: `uid`, `si_usr_id` och `si_ses_id`. OmniRoute vidarebefordrar samma slutpunkt `/api/dispatch` via ett enda modell-id (`notrack-c`, alias `ntw`).
+
+### Steg för att ansluta
+
+1. Öppna [notrack.ai](https://notrack.ai) i webbläsaren och låt den anonyma sessionscookien ställas in.
+2. Öppna **Utvecklarverktyg → Nätverk**, uppdatera sidan och klicka på valfri `/api`-begäran.
+3. Kopiera hela värdet för `Cookie`-headern under **Begärandehuvuden**.
+4. Gå till **Leverantörer → Lägg till leverantör → NoTrack Web (kostnadsfri)** i OmniRoute.
+5. Klistra in cookie-strängen i fältet `apiKey` och **Spara**.
+
+OmniRoute extraherar `uid`, `si_usr_id` och `si_ses_id` från den inklistrade strängen och bygger en ren `Cookie`-header med endast dessa par — plus `nt_session` (`ntk_…`-token som ställs in för inloggade konton) när den finns. Om någon av de tre saknas vidarebefordras den inklistrade råsträngen oförändrad, så att operatörer kan experimentera med alternativa format.
+
+### Modell-id:n
+
+| Modell-id   | Visningsnamn | Anmärkningar                                            |
+| ----------- | ------------ | ------------------------------------------------------- |
+| `notrack-c` | NoTrack C    | Standard — uppströmsmodellen `C` för dirigering.        |
+| `C`         | NoTrack C    | Alias för `notrack-c` (rå uppströmskod för dirigering). |
+| `notrack`   | NoTrack C    | Alias för `notrack-c`.                                  |
+| `ntw`       | NoTrack C    | Kort alias för `notrack-c`.                             |
+
+Alla fyra modell-id:n mappar till samma uppströmsmodell för dirigering (`C`).
+
+### Begärandealternativ
+
+Exekveraren accepterar följande valfria fält i begärandetexten:
+
+| Fält i begärandetexten | Standard | Syfte                                                                    |
+| ---------------------- | -------- | ------------------------------------------------------------------------ |
+| `notrack_mode`         | `usual`  | Dirigeringsläge (fritextsträng; uppströmstjänsten accepterar `usual`, …) |
+| `notrack_max_turns`    | `6`      | Antal interna turer som uppströmstjänsten får ta innan den svarar.       |
+| `notrack_chat_id`      | `null`   | Återuppta en befintlig uppströmschatt (utelämna för en ny chatt).        |
+| `notrack_attachments`  | `[]`     | Direktöverförd matris med uppströmsbeskrivningar av bilagor.             |
+| `notrack_regenerate`   | `false`  | Ange `true` för att begära ett omgenererat svar för föregående tur.      |
+
+### Funktioner
+
+- Chattkompletteringar **med och utan strömning**.
+- **Verktygsanrop** — ange `tools: [...]` i begäran; exekveraren serialiserar dem till ett kontrakt för verktygsanropskuvert och tolkar modellens svar tillbaka till OpenAI-`tool_calls`.
+- **`response_format`** — `json_object` och `json_schema` stöds. Exekveraren extraherar det första JSON-objektet från modellens svar och konverterar det till en sträng innan det returneras.
+- **Resonemangsindikering** — exekveraren skickar ett `reasoning`-delta när uppströmstjänsten skickar en `thinking`-händelse.
+
+### Begränsningar
+
+- Uppströmstjänsten tillämpar användningskvoter för anonyma användare — när de överskrids returnerar exekveraren statuskod 429 med ett användarvänligt meddelande.
+- Alla modell-id:n pekar på samma uppströmsmodell för dirigering; det finns inget modellspecifikt byte.
+- Exekveraren anropar inte uppströmstjänstens `/api/chats`-slutpunkt, så chatthistorik/sessioner hanteras inte automatiskt. Använd `notrack_chat_id` för att återuppta en befintlig uppströmschatt.
 
 ---
 
-# Vad webbcookieleverantörer kan och inte kan göra
+# Vad leverantörer med webbcookies kan och inte kan göra
 
-Webbcookieleverantörer återanvänder en webbplats chattgränssnitt. De tillhandahåller **inte** samma funktioner som officiella API:er.
+Leverantörer med webbcookies återanvänder en webbplats chattgränssnitt. De erbjuder **inte** samma funktioner som officiella API:er.
 
 ## Stöds
 
@@ -113,17 +163,17 @@ Webbcookieleverantörer återanvänder en webbplats chattgränssnitt. De tillhan
 
 Detta är förväntat beteende och är **inte** ett fel.
 
-Om du behöver verktygskörning, automatisk filredigering eller andra agentarbetsflöden ska du använda en **leverantör med API-nyckel** i stället för en webbcookieleverantör.
+Om du behöver verktygskörning, automatisk filredigering eller andra agentbaserade arbetsflöden ska du använda en **leverantör med API-nyckel** i stället för en Web Cookie-leverantör.
 
 ---
 
 # Begränsning vid validering
 
-En lyckad **Test Connection** eller cookievalidering verifierar endast att de angivna autentiseringsuppgifterna verkar ha det förväntade formatet.
+En lyckad **Test Connection** eller cookie-validering verifierar endast att de angivna autentiseringsuppgifterna verkar vara i det förväntade formatet.
 
-Tills Issue #7857 har lösts innebär en lyckad validering **inte någon garanti** för att leverantören kan autentisera.
+Tills Issue #7857 är löst innebär en lyckad validering **ingen garanti** för att leverantören kan autentisera.
 
-Om autentiseringen fortfarande misslyckas ska du kontrollera att du kopierade autentiseringsuppgifterna från en aktiv nätverksbegäran och inte från webbläsarens cookielagring.
+Om autentiseringen fortfarande misslyckas bör du kontrollera att du kopierade autentiseringsuppgifterna från en aktiv nätverksbegäran och inte från webbläsarens cookie-lagring.
 
 ---
 
@@ -150,25 +200,25 @@ Application
 
 ## Cookien fungerar i webbläsaren men inte i OmniRoute
 
-Vissa leverantörer inkluderar cookies som endast skickas under autentiserade begäranden.
+Vissa leverantörer inkluderar cookies som endast skickas vid autentiserade begäranden.
 
-Kopiera autentiseringsuppgifterna igen från en ny nätverksbegäran efter att du har öppnat en konversation.
+Kopiera autentiseringsuppgifterna på nytt från en ny nätverksbegäran efter att du har öppnat en konversation.
 
 ---
 
-## Sessionen har upphört
+## Sessionen har löpt ut
 
-Webbcookieleverantörer använder din befintliga webbläsarsession.
+Web Cookie-leverantörer använder din befintliga webbläsarsession.
 
-Om webbläsarsessionen upphör eller om du loggar ut måste du kopiera en ny uppsättning autentiseringsuppgifter.
+Om webbläsarsessionen löper ut eller om du loggar ut måste du kopiera en ny uppsättning autentiseringsuppgifter. Information om hur du automatiserar cookie-förnyelse för webbleverantörer som stöds finns i det kompletterande verktyget [Browser Session Sync Extension](../guides/SESSION-SYNC-EXTENSION.md).
 
 ---
 
 ## Test Connection lyckas men begäranden misslyckas
 
-Tills Issue #7857 har lösts innebär en godkänd validering inte någon garanti för att autentiseringsbegäran lyckas.
+Tills Issue #7857 är löst innebär en godkänd validering ingen garanti för att autentiseringsbegäran kommer att lyckas.
 
-Kopiera autentiseringsuppgifterna igen från en ny autentiserad begäran innan du fortsätter felsökningen.
+Kopiera autentiseringsuppgifterna på nytt från en ny autentiserad begäran innan du fortsätter felsökningen.
 
 ---
 
@@ -178,14 +228,14 @@ En fullständig leverantörsspecifik genomgång finns här:
 
 - **Claude Web** — `docs/providers/CLAUDE_WEB.md`
 
-Guiden för Claude Web demonstrerar hela konfigurationsprocessen för en webbcookieleverantör och fungerar som referensimplementation.
+Claude Web-guiden visar hela konfigurationsprocessen för en Web Cookie-leverantör och fungerar som referensimplementation.
 
 ---
 
-# Bästa praxis
+# Rekommenderade metoder
 
 - Kopiera autentiseringsuppgifter från en ny autentiserad begäran.
 - Undvik att återanvända gamla cookies.
-- Håll webbläsarsessionen aktiv medan du använder webbcookieleverantörer.
+- Håll webbläsarsessionen aktiv medan du använder Web Cookie-leverantörer.
 - Behandla kopierade cookies som känsliga autentiseringsuppgifter.
-- Använd leverantörer med API-nyckel när du behöver funktionsanrop eller agentarbetsflöden.
+- Använd leverantörer med API-nyckel när du behöver funktionsanrop eller agentbaserade arbetsflöden.
